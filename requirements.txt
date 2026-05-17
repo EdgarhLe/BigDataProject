@@ -1,0 +1,28 @@
+# Core pipeline
+dagster==1.7.*
+dagster-webserver==1.7.*
+
+# Data sources
+google-api-python-client==2.131.*
+requests==2.32.*
+beautifulsoup4==4.12.*
+lxml==5.2.*
+
+# Databases
+pymongo==4.7.*
+psycopg2-binary==2.9.*
+sqlalchemy==2.0.*
+
+# AI / NLP
+openai==1.30.*
+httpx<0.28.0
+underthesea==6.8.*
+
+# Dashboard
+streamlit==1.35.*
+plotly==5.22.*
+pandas==2.2.*
+
+# Utilities
+python-dotenv==1.0.*
+tenacity==8.3.*

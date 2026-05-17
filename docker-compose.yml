@@ -1,0 +1,101 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: social_mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-secret}
+      MONGO_INITDB_DATABASE: social_listening
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - social_net
+
+  postgres:
+    image: postgres:16
+    container_name: social_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      POSTGRES_DB: social_listening
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    networks:
+      - social_net
+
+  dagster_webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.dagster
+    container_name: social_dagster
+    restart: unless-stopped
+    environment:
+      DAGSTER_HOME: /opt/dagster/dagster_home
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+      - postgres
+    volumes:
+      - ./src:/app/src
+      - dagster_home:/opt/dagster/dagster_home
+    networks:
+      - social_net
+    command: dagster-webserver -h 0.0.0.0 -p 3000 -w /app/workspace.yaml
+
+  dagster_daemon:
+    build:
+      context: .
+      dockerfile: Dockerfile.dagster
+    container_name: social_dagster_daemon
+    restart: unless-stopped
+    environment:
+      DAGSTER_HOME: /opt/dagster/dagster_home
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+      - postgres
+    volumes:
+      - ./src:/app/src
+      - dagster_home:/opt/dagster/dagster_home
+    networks:
+      - social_net
+    command: dagster-daemon run
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: social_dashboard
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8501:8501"
+    depends_on:
+      - postgres
+    volumes:
+      - ./src:/app/src
+    networks:
+      - social_net
+
+volumes:
+  mongo_data:
+  postgres_data:
+  dagster_home:
+
+networks:
+  social_net:
+    driver: bridge
