@@ -97,7 +97,27 @@ def _update_daily_summary(conn, brand: str, source: str, sentiment_label: str, p
 
 
 def run_etl() -> dict:
-    """Process all unprocessed raw documents. Returns stats dict."""
+    """Process all unprocessed raw documents.
+
+    Tries Spark-based ETL first (Kafka batch → MLlib inference → PostgreSQL JDBC).
+    Falls back to the row-by-row Python ETL if Spark or Kafka is unavailable.
+    Returns stats dict.
+    """
+    try:
+        from src.processing.spark_etl import run_spark_etl
+        stats = run_spark_etl()
+        # If Spark processed nothing it may mean Kafka was empty; run Python ETL
+        # as a safety net to catch any docs written directly to MongoDB without Kafka.
+        if stats.get("processed", 0) == 0:
+            logger.info("Spark ETL found nothing — running Python ETL as fallback.")
+            stats = _run_python_etl()
+        return stats
+    except Exception as exc:
+        logger.warning("Spark ETL unavailable (%s) — falling back to Python ETL.", exc)
+        return _run_python_etl()
+
+
+def _run_python_etl() -> dict:
     engine = _get_engine()
     stats = {"processed": 0, "skipped": 0, "errors": 0}
 

@@ -24,6 +24,19 @@ CREATE INDEX IF NOT EXISTS idx_posts_source    ON posts(source);
 CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published_at);
 CREATE INDEX IF NOT EXISTS idx_posts_alerted   ON posts(alerted_at) WHERE alerted_at IS NULL;
 
+CREATE TABLE IF NOT EXISTS model_evaluations (
+    id              SERIAL PRIMARY KEY,
+    trained_at      TIMESTAMPTZ DEFAULT NOW(),
+    model_version   VARCHAR(64) NOT NULL,
+    num_train       INTEGER,
+    num_test        INTEGER,
+    accuracy        NUMERIC(6,4),
+    precision_score NUMERIC(6,4),
+    recall_score    NUMERIC(6,4),
+    f1_score        NUMERIC(6,4),
+    auc_roc         NUMERIC(6,4)
+);
+
 CREATE TABLE IF NOT EXISTS daily_summary (
     id          SERIAL PRIMARY KEY,
     date        DATE NOT NULL,

@@ -17,6 +17,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.config import TRACK_KEYWORDS
 from src.utils import detect_brand, make_doc_id, upsert_raw, utcnow
+from src.ingestion.kafka_producer import publish_doc
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,10 @@ RSS_FEEDS = [
 
 # Tìm kiếm bổ sung
 SEARCH_QUERIES = [
-    "VinFast xe điện",
-    "BYD Việt Nam",
-    "Xiaomi Auto SU7",
+    "VinFast xe máy điện",
+    "Dat Bike",
+    "Yadea Dibao xe máy điện",
+    "Honda xe điện Việt Nam",
 ]
 
 SEARCH_URL  = "https://tuoitre.vn/tim-kiem.htm"
@@ -144,6 +146,7 @@ def _store_article(article: dict, query: str, stats: dict) -> None:
     }
     if upsert_raw("tuoitre_raw", doc):
         stats["new"] += 1
+        publish_doc(doc, "tuoitre_raw")
     else:
         stats["duplicate"] += 1
 

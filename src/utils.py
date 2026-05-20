@@ -7,25 +7,41 @@ from src.config import MONGO_URI, MONGO_DB
 
 # ── Brand disambiguation dictionary ───────────────────────────────────────────
 BRAND_MAP: dict[str, str] = {
-    # VinFast
+    # VinFast (xe máy điện)
     "vinfast": "VinFast",
-    "vf3": "VinFast", "vf5": "VinFast", "vf6": "VinFast",
-    "vf7": "VinFast", "vf8": "VinFast", "vf9": "VinFast",
-    "vfe34": "VinFast",
-    # BYD
-    "byd": "BYD",
-    "atto 3": "BYD", "atto3": "BYD",
-    "dolphin": "BYD",
-    "seal": "BYD",
-    "han": "BYD", "tang": "BYD",
-    # Xiaomi Auto
-    "xiaomi auto": "Xiaomi Auto",
-    "xiaomi car": "Xiaomi Auto",
-    "su7": "Xiaomi Auto",
+    "evo200": "VinFast",   "evo 200": "VinFast",
+    "feliz s": "VinFast", "feliz": "VinFast",
+    "klara s": "VinFast", "klara": "VinFast",
+    "vento s": "VinFast", "vento": "VinFast",
+    "theon s": "VinFast", "theon": "VinFast",
+    "rasad": "VinFast",
+    "sadie": "VinFast",
+    "saxil": "VinFast",
+    # Dat Bike
+    "dat bike": "Dat Bike",
+    "datbike": "Dat Bike",
+    "weaver++": "Dat Bike", "weaver": "Dat Bike",
+    "dat bike quantum": "Dat Bike",
+    # Selex Motors (substring dài trước để tránh match nhầm)
+    "selex motors": "Selex Motors",
+    "selex camel": "Selex Motors",
+    "selex": "Selex Motors",
+    # Yadea
+    "yadea": "Yadea",
+    # Dibao
+    "dibao": "Dibao",
+    # Honda EV (substring dài trước ngắn)
+    "honda icon e": "Honda",
+    "icon e:": "Honda",  "icon e": "Honda",
+    "cuv e:": "Honda",   "cuv e": "Honda",
+    "honda uc3": "Honda", "uc3": "Honda",
+    "honda": "Honda",
     # Generic
-    "xe điện": "General EV",
-    "ev việt nam": "General EV",
-    "electric vehicle": "General EV",
+    "xe máy điện": "General E-Scooter",
+    "scooter điện": "General E-Scooter",
+    "xe điện": "General E-Scooter",
+    "electric scooter": "General E-Scooter",
+    "e-scooter": "General E-Scooter",
 }
 
 

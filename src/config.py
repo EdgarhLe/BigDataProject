@@ -28,10 +28,22 @@ POSTGRES_URI = (
     f"/{os.getenv('POSTGRES_DB','social_listening')}"
 )
 
+# ── Kafka ─────────────────────────────────────────────────────
+KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+KAFKA_TOPIC_RAW         = os.getenv("KAFKA_TOPIC_RAW", "social_raw_posts")
+
+# ── Spark / MLlib ─────────────────────────────────────────────
+MODEL_PATH = os.getenv("MODEL_PATH", "./models/sentiment_pipeline")
+
 # ── Crawl Settings ────────────────────────────────────────────
 RAW_KEYWORDS = os.getenv(
     "TRACK_KEYWORDS",
-    "VinFast,VF3,VF5,VF6,VF7,VF8,VF9,BYD,Atto 3,Dolphin,Seal,Xiaomi Auto,SU7,xe điện,EV Việt Nam"
+    "VinFast,Evo200,Feliz S,Klara S,Vento S,Theon S,Rasad,Sadie,Saxil,"
+    "Dat Bike,Weaver,Dat Bike Quantum,"
+    "Selex,Selex Camel,"
+    "Yadea,Dibao,"
+    "Honda Icon e,CUV e,Honda UC3,"
+    "xe máy điện,scooter điện,electric scooter"
 )
 TRACK_KEYWORDS = [k.strip() for k in RAW_KEYWORDS.split(",") if k.strip()]
 

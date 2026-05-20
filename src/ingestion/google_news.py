@@ -11,17 +11,19 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.config import SERP_API_KEY, TRACK_KEYWORDS, SERP_MAX_PAGES
 from src.utils import detect_brand, make_doc_id, upsert_raw, utcnow
+from src.ingestion.kafka_producer import publish_doc
 
 logger = logging.getLogger(__name__)
 
 SERP_ENDPOINT = "https://serpapi.com/search"
 
-# Combine into focused queries for Vietnamese news
+# Mỗi query tập trung vào 1 cụm thương hiệu xe máy điện
 SEARCH_QUERIES = [
-    "VinFast xe điện",
-    "BYD Việt Nam",
-    "Xiaomi Auto SU7 Việt Nam",
-    "xe điện Việt Nam 2024 2025",
+    "VinFast xe máy điện",
+    "Dat Bike Weaver Quantum Việt Nam",
+    "Selex Yadea Dibao xe máy điện",
+    "Honda Icon e CUV e UC3 xe điện Việt Nam",
+    "xe máy điện Việt Nam 2025",
 ]
 
 
@@ -82,6 +84,7 @@ def run_google_news_ingestion() -> dict:
                     }
                     if upsert_raw("google_news_raw", doc):
                         stats["new"] += 1
+                        publish_doc(doc, "google_news_raw")
                     else:
                         stats["duplicate"] += 1
 

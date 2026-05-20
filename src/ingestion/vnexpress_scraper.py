@@ -15,14 +15,16 @@ from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.utils import detect_brand, make_doc_id, upsert_raw, utcnow
+from src.ingestion.kafka_producer import publish_doc
 
 logger = logging.getLogger(__name__)
 
 SEARCH_QUERIES = [
-    "VinFast xe điện",
-    "BYD Việt Nam",
-    "Xiaomi Auto SU7",
-    "xe điện 2024 2025",
+    "VinFast xe máy điện",
+    "Dat Bike",
+    "Selex Yadea Dibao xe máy điện",
+    "Honda Icon e xe điện",
+    "xe máy điện 2025",
 ]
 
 SEARCH_URL   = "https://timkiem.vnexpress.net/"
@@ -126,6 +128,7 @@ def run_vnexpress_ingestion() -> dict:
             }
             if upsert_raw("vnexpress_raw", doc):
                 stats["new"] += 1
+                publish_doc(doc, "vnexpress_raw")
             else:
                 stats["duplicate"] += 1
 
@@ -153,6 +156,7 @@ def run_vnexpress_ingestion() -> dict:
                         }
                         if upsert_raw("vnexpress_raw", cmt_doc):
                             stats["new"] += 1
+                            publish_doc(cmt_doc, "vnexpress_raw")
                         else:
                             stats["duplicate"] += 1
                 except Exception as e:

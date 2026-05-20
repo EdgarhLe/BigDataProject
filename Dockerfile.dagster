@@ -2,7 +2,14 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+# Install system deps: gcc (psycopg2), libpq-dev, default-jdk (PySpark)
+RUN apt-get update && \
+    apt-get install -y gcc libpq-dev default-jdk-headless curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# PySpark needs JAVA_HOME
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="$JAVA_HOME/bin:$PATH"
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -12,5 +19,8 @@ COPY src/ ./src/
 COPY workspace.yaml .
 
 ENV PYTHONPATH=/app
+# Fix PySpark python3/python mismatch on Debian
+ENV PYSPARK_PYTHON=python3
+ENV PYSPARK_DRIVER_PYTHON=python3
 
 CMD ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000", "-w", "/app/workspace.yaml"]

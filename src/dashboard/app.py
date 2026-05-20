@@ -1,4 +1,4 @@
-"""Streamlit dashboard for Social Listening — EV Race in Vietnam.
+"""Streamlit dashboard for Social Listening — Xe Máy Điện Race in Vietnam.
 
 Pages:
   1. Overview    — Share of Voice pie chart, daily mentions trend
@@ -14,10 +14,21 @@ from sqlalchemy import create_engine, text
 from src.config import POSTGRES_URI
 
 st.set_page_config(
-    page_title="EV Social Listening — Vietnam",
-    page_icon="⚡",
+    page_title="Xe Máy Điện Social Listening — Vietnam",
+    page_icon="🛵",
     layout="wide",
 )
+
+# ── Brand colour palette ────────────────────────────────────────────────
+BRAND_COLORS: dict[str, str] = {
+    "VinFast":           "#002060",
+    "Dat Bike":          "#E63946",
+    "Selex Motors":      "#2DC653",
+    "Yadea":             "#F77F00",
+    "Dibao":             "#9B59B6",
+    "Honda":             "#CC0000",
+    "General E-Scooter": "#00A8CC",
+}
 
 # ── DB connection ──────────────────────────────────────────────────────────────
 
@@ -31,11 +42,12 @@ def load_posts(days: int = 30) -> pd.DataFrame:
     engine = get_engine()
     query = text("""
         SELECT source, brand, title, content, url, author,
-               published_at, sentiment, sentiment_score
+               COALESCE(published_at, crawled_at) AS published_at,
+               sentiment, sentiment_score
         FROM posts
-        WHERE published_at >= NOW() - INTERVAL ':days days'
+        WHERE COALESCE(published_at, crawled_at) >= NOW() - INTERVAL ':days days'
           AND brand != 'Other'
-        ORDER BY published_at DESC
+        ORDER BY COALESCE(published_at, crawled_at) DESC
         LIMIT 5000
     """).bindparams(days=days)
     with engine.connect() as conn:
@@ -60,14 +72,14 @@ def load_daily_summary(days: int = 30) -> pd.DataFrame:
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 
-st.sidebar.title("⚡ EV Social Listening")
-st.sidebar.markdown("**Vietnam EV Race**\nVinFast · BYD · Xiaomi Auto")
+st.sidebar.title("🛵 Xe Máy Điện Social Listening")
+st.sidebar.markdown("**Vietnam E-Scooter Race**\nVinFast · Dat Bike · Selex · Yadea · Dibao · Honda")
 
 days = st.sidebar.slider("Khoảng thời gian (ngày)", min_value=7, max_value=90, value=30, step=7)
 selected_sources = st.sidebar.multiselect(
     "Nguồn dữ liệu",
-    options=["youtube", "reddit", "google_news"],
-    default=["youtube", "reddit", "google_news"],
+    options=["youtube", "google_news", "vnexpress", "tuoitre"],
+    default=["youtube", "google_news", "vnexpress", "tuoitre"],
 )
 
 # ── Load data ─────────────────────────────────────────────────────────────────
@@ -91,7 +103,7 @@ tab1, tab2, tab3 = st.tabs(["📊 Tổng quan", "😊 Cảm xúc", "📰 Raw Fee
 
 # ────────────────────────────── Tab 1: Tổng quan ──────────────────────────────
 with tab1:
-    st.header("📊 Tổng quan — Share of Voice")
+    st.header("📊 Tổng quan — Share of Voice (Xe Máy Điện)")
 
     if not data_ok or df_posts.empty:
         st.info("Chưa có dữ liệu. Hãy chạy pipeline thu thập dữ liệu.")
@@ -112,12 +124,7 @@ with tab1:
             st.subheader("Presence Score (Share of Voice)")
             fig_pie = px.pie(
                 sov, values="count", names="brand",
-                color_discrete_map={
-                    "VinFast": "#002060",
-                    "BYD": "#CC0000",
-                    "Xiaomi Auto": "#FF6900",
-                    "General EV": "#00A651",
-                },
+                color_discrete_map=BRAND_COLORS,
                 hole=0.35,
             )
             fig_pie.update_traces(textposition="inside", textinfo="percent+label")
@@ -129,10 +136,7 @@ with tab1:
                 daily_brand = df_summary.groupby(["date", "brand"])["total_mentions"].sum().reset_index()
                 fig_line = px.line(
                     daily_brand, x="date", y="total_mentions", color="brand",
-                    color_discrete_map={
-                        "VinFast": "#002060", "BYD": "#CC0000",
-                        "Xiaomi Auto": "#FF6900", "General EV": "#00A651",
-                    },
+                    color_discrete_map=BRAND_COLORS,
                     labels={"total_mentions": "Số lượt nhắc", "date": "Ngày"},
                 )
                 st.plotly_chart(fig_line, use_container_width=True)

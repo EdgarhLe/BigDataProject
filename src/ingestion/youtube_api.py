@@ -12,12 +12,19 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.config import YOUTUBE_API_KEY, TRACK_KEYWORDS, YOUTUBE_MAX_RESULTS
 from src.utils import detect_brand, make_doc_id, upsert_raw, utcnow
+from src.ingestion.kafka_producer import publish_doc
 
 logger = logging.getLogger(__name__)
 
-SEARCH_QUERY = " OR ".join(
-    [kw for kw in TRACK_KEYWORDS if kw not in ("xe điện", "EV Việt Nam")][:6]
-)
+# Mỗi brand có query riêng — tránh YouTube chỉ trả kết quả VinFast
+BRAND_QUERIES = [
+    "VinFast xe máy điện",
+    "Dat Bike Weaver",
+    "Selex xe điện",
+    "Yadea xe máy điện",
+    "Dibao xe máy điện",
+    "Honda Icon e xe điện",
+]
 
 
 def _build_service():
@@ -72,18 +79,21 @@ def run_youtube_ingestion() -> dict:
     service = _build_service()
     stats = {"source": "youtube", "new": 0, "duplicate": 0}
 
-    try:
-        videos = _search_videos(service, SEARCH_QUERY, YOUTUBE_MAX_RESULTS)
-        logger.info("Found %d videos for query '%s'", len(videos), SEARCH_QUERY)
-    except HttpError as e:
-        logger.error("YouTube search failed: %s", e)
-        stats["error"] = str(e)
-        return stats
+    seen_video_ids: set[str] = set()
+    all_videos: list[dict] = []
+    for query in BRAND_QUERIES:
+        try:
+            results = _search_videos(service, query, max(YOUTUBE_MAX_RESULTS // len(BRAND_QUERIES), 10))
+            logger.info("Found %d videos for query '%s'", len(results), query)
+            all_videos.extend(results)
+        except HttpError as e:
+            logger.error("YouTube search failed for '%s': %s", query, e)
 
-    for video_item in videos:
+    for video_item in all_videos:
         video_id = video_item["id"].get("videoId")
-        if not video_id:
+        if not video_id or video_id in seen_video_ids:
             continue
+        seen_video_ids.add(video_id)
 
         snippet = video_item["snippet"]
         # Store the video itself
@@ -103,6 +113,7 @@ def run_youtube_ingestion() -> dict:
         is_new = upsert_raw("youtube_raw", video_doc)
         if is_new:
             stats["new"] += 1
+            publish_doc(video_doc, "youtube_raw")
         else:
             stats["duplicate"] += 1
 
@@ -129,6 +140,7 @@ def run_youtube_ingestion() -> dict:
             is_new = upsert_raw("youtube_raw", doc)
             if is_new:
                 stats["new"] += 1
+                publish_doc(doc, "youtube_raw")
             else:
                 stats["duplicate"] += 1
 
