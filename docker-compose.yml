@@ -71,6 +71,7 @@ services:
       - kafka
     volumes:
       - ./src:/app/src
+      - ./scripts:/app/scripts
       - dagster_home:/opt/dagster/dagster_home
       - spark_models:/opt/models
     networks:
@@ -93,6 +94,7 @@ services:
       - kafka
     volumes:
       - ./src:/app/src
+      - ./scripts:/app/scripts
       - dagster_home:/opt/dagster/dagster_home
       - spark_models:/opt/models
     networks:
@@ -113,6 +115,7 @@ services:
       - postgres
     volumes:
       - ./src:/app/src
+      - ./scripts:/app/scripts
     networks:
       - social_net
 

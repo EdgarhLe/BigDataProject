@@ -15,8 +15,8 @@ import requests
 from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from src.config import TRACK_KEYWORDS
-from src.utils import detect_brand, make_doc_id, upsert_raw, utcnow
+from src.config import SERP_API_KEY
+from src.utils import detect_brand, make_doc_id, upsert_raw, utcnow, get_track_keywords
 from src.ingestion.kafka_producer import publish_doc
 
 logger = logging.getLogger(__name__)
@@ -49,14 +49,15 @@ HEADERS = {
 }
 
 # Từ khóa lọc bài liên quan
-_FILTER_KEYWORDS = [kw.lower() for kw in TRACK_KEYWORDS] + [
-    "xe điện", "electric", "ev", "vinfast", "byd", "xiaomi"
-]
+def get_filter_keywords():
+    return [kw.lower() for kw in get_track_keywords()] + [
+        "xe điện", "electric", "ev", "vinfast", "byd", "xiaomi"
+    ]
 
 
 def _is_relevant(text: str) -> bool:
     text_lower = text.lower()
-    return any(kw in text_lower for kw in _FILTER_KEYWORDS)
+    return any(kw in text_lower for kw in get_filter_keywords())
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))

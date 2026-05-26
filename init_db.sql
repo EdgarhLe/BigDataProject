@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS posts (
     sentiment_score NUMERIC(5,4),
     language    VARCHAR(8) DEFAULT 'vi',
     raw_mongo_id VARCHAR(64),
-    alerted_at  TIMESTAMPTZ                     -- NULL until Telegram alert sent
+    alerted_at  TIMESTAMPTZ,                     -- NULL until Telegram alert sent
+    emotion     VARCHAR(64),                     -- Phẫn nộ, Vui vẻ, Buồn bã...
+    aspects     JSONB
 );
 
 CREATE INDEX IF NOT EXISTS idx_posts_brand     ON posts(brand);

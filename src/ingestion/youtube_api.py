@@ -10,22 +10,17 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from src.config import YOUTUBE_API_KEY, TRACK_KEYWORDS, YOUTUBE_MAX_RESULTS
-from src.utils import detect_brand, make_doc_id, upsert_raw, utcnow
+from src.config import YOUTUBE_API_KEY, YOUTUBE_MAX_RESULTS
+from src.utils import detect_brand, make_doc_id, upsert_raw, utcnow, get_track_keywords
 from src.ingestion.kafka_producer import publish_doc
 
 logger = logging.getLogger(__name__)
 
-# Mỗi brand có query riêng — tránh YouTube chỉ trả kết quả VinFast
-BRAND_QUERIES = [
-    "VinFast xe máy điện",
-    "Dat Bike Weaver",
-    "Selex xe điện",
-    "Yadea xe máy điện",
-    "Dibao xe máy điện",
-    "Honda Icon e xe điện",
-]
-
+def get_brand_queries():
+    base_keywords = get_track_keywords()
+    if not base_keywords:
+        return ["xe máy điện"]
+    return base_keywords  # search directly with the keyword
 
 def _build_service():
     return build("youtube", "v3", developerKey=YOUTUBE_API_KEY, cache_discovery=False)
@@ -81,9 +76,10 @@ def run_youtube_ingestion() -> dict:
 
     seen_video_ids: set[str] = set()
     all_videos: list[dict] = []
-    for query in BRAND_QUERIES:
+    brand_queries = get_brand_queries()
+    for query in brand_queries:
         try:
-            results = _search_videos(service, query, max(YOUTUBE_MAX_RESULTS // len(BRAND_QUERIES), 10))
+            results = _search_videos(service, query, max(YOUTUBE_MAX_RESULTS // len(brand_queries), 10))
             logger.info("Found %d videos for query '%s'", len(results), query)
             all_videos.extend(results)
         except HttpError as e:

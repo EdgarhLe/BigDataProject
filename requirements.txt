@@ -19,7 +19,7 @@ httpx<0.28.0
 underthesea==6.8.*
 
 # Big Data
-pyspark==3.5.*
+pyspark==3.5.1
 kafka-python==2.0.*
 
 # Dashboard

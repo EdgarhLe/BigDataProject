@@ -6,6 +6,7 @@ analysis, maps brands, and writes to the PostgreSQL 'posts' table.
 Also updates the daily_summary aggregate table.
 """
 import logging
+import re
 from datetime import datetime, timezone, date
 
 from sqlalchemy import create_engine, text
@@ -36,17 +37,21 @@ def _upsert_post(conn, doc: dict, sentiment: dict) -> None:
         except ValueError:
             published_at = None
 
+    import json
+    
     conn.execute(
         text("""
             INSERT INTO posts
                 (doc_id, source, brand, title, content, url, author,
-                 published_at, crawled_at, sentiment, sentiment_score, language)
+                 published_at, crawled_at, sentiment, sentiment_score, language, emotion, aspects)
             VALUES
                 (:doc_id, :source, :brand, :title, :content, :url, :author,
-                 :published_at, :crawled_at, :sentiment, :sentiment_score, :language)
+                 :published_at, :crawled_at, :sentiment, :sentiment_score, :language, :emotion, :aspects)
             ON CONFLICT (doc_id) DO UPDATE SET
                 sentiment       = EXCLUDED.sentiment,
-                sentiment_score = EXCLUDED.sentiment_score
+                sentiment_score = EXCLUDED.sentiment_score,
+                emotion         = EXCLUDED.emotion,
+                aspects         = EXCLUDED.aspects
         """),
         {
             "doc_id": doc["doc_id"],
@@ -61,6 +66,8 @@ def _upsert_post(conn, doc: dict, sentiment: dict) -> None:
             "sentiment": sentiment["label"],
             "sentiment_score": sentiment["score"],
             "language": "vi",
+            "emotion": sentiment.get("emotion", "Bình thường"),
+            "aspects": json.dumps(sentiment.get("aspects", {}))
         },
     )
 
@@ -95,6 +102,25 @@ def _update_daily_summary(conn, brand: str, source: str, sentiment_label: str, p
     sql = _SENTIMENT_SQL.get(sentiment_label, _SENTIMENT_SQL["neutral"])
     conn.execute(text(sql), {"date": pub_date, "brand": brand, "source": source})
 
+def is_spam(text: str) -> bool:
+    """Heuristic spam filter to save API costs."""
+    text_lower = text.lower()
+    
+    # 1. Quá nhiều hashtag
+    if text.count("#") > 5:
+        return True
+        
+    # 2. Sinh link rút gọn của các nền tảng bán hàng/spam
+    sus_links = ["bit.ly", "t.co", "shope.ee", "s.lazada.vn", "click link"]
+    if any(link in text_lower for link in sus_links):
+        return True
+        
+    # 3. Chứa các từ khóa Seeding / Chốt đơn cứng
+    seeding_kw = ["inbox", "nhận quà", "đặt hàng ngay", "giảm giá sốc", "ưu đãi cực khủng", "chốt đơn"]
+    if sum(1 for kw in seeding_kw if kw in text_lower) >= 2:
+        return True
+        
+    return False
 
 def run_etl() -> dict:
     """Process all unprocessed raw documents.
@@ -131,6 +157,15 @@ def _run_python_etl() -> dict:
                 try:
                     content = (doc.get("content") or "") + " " + (doc.get("title") or "")
                     content = content.strip()
+
+                    if is_spam(content):
+                        # Mark as spam and skip heavy processing
+                        collection.update_one(
+                            {"_id": doc["_id"]},
+                            {"$set": {"processed_at": utcnow().isoformat(), "is_spam": True}}
+                        )
+                        stats["skipped"] += 1
+                        continue
 
                     # Re-run brand detection (may be missing from older docs)
                     brand = doc.get("brand") or detect_brand(content) or "Other"

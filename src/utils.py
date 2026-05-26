@@ -48,6 +48,17 @@ BRAND_MAP: dict[str, str] = {
 def detect_brand(text: str) -> str:
     """Return the primary brand detected in text, else 'Other'."""
     text_lower = text.lower()
+    
+    # Dynamically check current track keywords first
+    try:
+        dynamic_kws = get_track_keywords()
+        for kw in dynamic_kws:
+            if kw.lower() in text_lower:
+                return kw # Return exact case of the keyword
+    except Exception:
+        pass
+
+    # Fallback to hardcoded BRAND_MAP mapping
     for keyword, brand in BRAND_MAP.items():
         if keyword in text_lower:
             return brand
@@ -79,8 +90,23 @@ def get_collection(name: str) -> Collection:
     db = client[MONGO_DB]
     col = db[name]
     # Ensure unique index on doc_id to prevent duplicate inserts
-    col.create_index([("doc_id", ASCENDING)], unique=True)
+    if name != "tracking_configs":
+        col.create_index([("doc_id", ASCENDING)], unique=True)
     return col
+
+
+def get_track_keywords() -> list[str]:
+    """Retrieve dynamic keywords from MongoDB, fallback to .env."""
+    from src.config import TRACK_KEYWORDS
+    try:
+        col = get_collection("tracking_configs")
+        keywords = list(col.find({}))
+        if keywords:
+            return [k.get("keyword") for k in keywords if k.get("keyword")]
+    except Exception:
+        pass
+    
+    return TRACK_KEYWORDS
 
 
 def upsert_raw(collection_name: str, doc: dict) -> bool:

@@ -9,23 +9,19 @@ import time
 import requests
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from src.config import SERP_API_KEY, TRACK_KEYWORDS, SERP_MAX_PAGES
-from src.utils import detect_brand, make_doc_id, upsert_raw, utcnow
+from src.config import SERP_API_KEY, SERP_MAX_PAGES
+from src.utils import detect_brand, make_doc_id, upsert_raw, utcnow, get_track_keywords
 from src.ingestion.kafka_producer import publish_doc
 
 logger = logging.getLogger(__name__)
 
 SERP_ENDPOINT = "https://serpapi.com/search"
 
-# Mỗi query tập trung vào 1 cụm thương hiệu xe máy điện
-SEARCH_QUERIES = [
-    "VinFast xe máy điện",
-    "Dat Bike Weaver Quantum Việt Nam",
-    "Selex Yadea Dibao xe máy điện",
-    "Honda Icon e CUV e UC3 xe điện Việt Nam",
-    "xe máy điện Việt Nam 2025",
-]
-
+def get_search_queries():
+    base_keywords = get_track_keywords()
+    if not base_keywords:
+        return ["xe máy điện Việt Nam 2025"]
+    return base_keywords  # search directly with the keyword
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=3, max=15))
 def _fetch_news_page(query: str, page: int) -> list[dict]:
@@ -53,7 +49,7 @@ def run_google_news_ingestion() -> dict:
 
     stats = {"source": "google_news", "new": 0, "duplicate": 0}
 
-    for query in SEARCH_QUERIES:
+    for query in get_search_queries():
         for page in range(SERP_MAX_PAGES):
             try:
                 articles = _fetch_news_page(query, page)

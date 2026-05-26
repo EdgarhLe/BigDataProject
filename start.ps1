@@ -1,12 +1,12 @@
-# Quick Start — Social Listening EV Vietnam
+# Quick Start - Social Listening EV Vietnam
 # Run this script once to initialize the project.
 
-Write-Host "=== Social Listening — EV Vietnam ===" -ForegroundColor Cyan
+Write-Host "=== Social Listening - EV Vietnam ===" -ForegroundColor Cyan
 
 # 1. Copy env file if not exists
 if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
-    Write-Host "[1/4] .env created from .env.example — fill in your API keys!" -ForegroundColor Yellow
+    Write-Host "[1/4] .env created from .env.example - fill in your API keys!" -ForegroundColor Yellow
 } else {
     Write-Host "[1/4] .env already exists" -ForegroundColor Green
 }

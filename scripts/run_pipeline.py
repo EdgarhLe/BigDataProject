@@ -20,17 +20,14 @@ logging.basicConfig(
 
 def step_ingest():
     from src.ingestion.youtube_api import run_youtube_ingestion
-    from src.ingestion.reddit_api import run_reddit_ingestion
     from src.ingestion.google_news import run_google_news_ingestion
 
     print("\n>>> Running ingestion...")
     yt   = run_youtube_ingestion()
-    rd   = run_reddit_ingestion()
     gn   = run_google_news_ingestion()
-    total_new = yt.get("new", 0) + rd.get("new", 0) + gn.get("new", 0)
-    total_dup = yt.get("duplicate", 0) + rd.get("duplicate", 0) + gn.get("duplicate", 0)
+    total_new = yt.get("new", 0) + gn.get("new", 0)
+    total_dup = yt.get("duplicate", 0) + gn.get("duplicate", 0)
     print(f"\n    YouTube     : {yt}")
-    print(f"    Reddit      : {rd}")
     print(f"    Google News : {gn}")
     print(f"\n    Total new   : {total_new:,}   duplicates blocked: {total_dup:,}")
 

@@ -17,9 +17,14 @@ logger = logging.getLogger(__name__)
 
 _SYSTEM_PROMPT = """Bạn là một chuyên gia phân tích cảm xúc văn bản tiếng Việt và tiếng Anh.
 Phân tích cảm xúc của văn bản sau về một thương hiệu xe điện.
-Trả về JSON theo định dạng: {"label": "positive"|"negative"|"neutral", "score": <0.0-1.0>}
-Chỉ trả về JSON, không có văn bản thêm."""
-
+Trả về JSON theo định dạng:
+{
+  "label": "positive"|"negative"|"neutral",
+  "score": <0.0-1.0>,
+  "emotion": "Vui vẻ"|"Phẫn nộ"|"Buồn bã"|"Ngạc nhiên"|"Bình thường",
+  "aspects": {"Tên_khía_cạnh_vd_Pin": "positive"|"negative"|"neutral"}
+}
+Chỉ trả về JSON hợp lệ."""
 
 def _sentiment_openai(text: str) -> dict:
     import json
@@ -33,14 +38,19 @@ def _sentiment_openai(text: str) -> dict:
             {"role": "user", "content": text[:1500]},  # cap to save tokens
         ],
         temperature=0,
-        max_tokens=60,
+        max_tokens=200,
         response_format={"type": "json_object"},
     )
     raw = response.choices[0].message.content or "{}"
     result = json.loads(raw)
-    label = result.get("label", "neutral")
-    score = float(result.get("score", 0.5))
-    return {"label": label, "score": round(score, 4)}
+    
+    # Ensure default fields are present
+    if "label" not in result: result["label"] = "neutral"
+    if "score" not in result: result["score"] = 0.5
+    if "emotion" not in result: result["emotion"] = "Bình thường"
+    if "aspects" not in result: result["aspects"] = {}
+    
+    return result
 
 
 # ── underthesea-based sentiment (offline) ─────────────────────────────────────
@@ -55,7 +65,7 @@ def _sentiment_underthesea(text: str) -> dict:
         "neutral": ("neutral", 0.60),
     }
     label, score = mapping.get(str(label_raw).lower(), ("neutral", 0.50))
-    return {"label": label, "score": score}
+    return {"label": label, "score": score, "emotion": "Bình thường", "aspects": {}}
 
 
 # ── Keyword-based Vietnamese/English fallback ─────────────────────────────────
@@ -95,11 +105,11 @@ def _sentiment_keywords(text: str) -> dict:
 
     if pos > neg:
         score = min(0.55 + pos * 0.08, 0.92)
-        return {"label": "positive", "score": round(score, 4)}
+        return {"label": "positive", "score": round(score, 4), "emotion": "Bình thường", "aspects": {}}
     elif neg > pos:
         score = min(0.55 + neg * 0.08, 0.92)
-        return {"label": "negative", "score": round(score, 4)}
-    return {"label": "neutral", "score": 0.55}
+        return {"label": "negative", "score": round(score, 4), "emotion": "Bình thường", "aspects": {}}
+    return {"label": "neutral", "score": 0.55, "emotion": "Bình thường", "aspects": {}}
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
