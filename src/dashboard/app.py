@@ -1,9 +1,10 @@
-"""Streamlit dashboard for Social Listening — Xe Máy Điện Race in Vietnam.
+"""Streamlit dashboard for Social Listening.
 
 Pages:
   1. Overview    — Share of Voice pie chart, daily mentions trend
   2. Sentiment   — Sentiment breakdown per brand + time series
   3. Raw Feed    — Filterable table of recent posts
+  4. Settings    — Manage tracked keywords and run pipeline
 """
 import pandas as pd
 import plotly.express as px
@@ -14,8 +15,8 @@ from sqlalchemy import create_engine, text
 from src.config import POSTGRES_URI
 
 st.set_page_config(
-    page_title="Xe Máy Điện Social Listening — Vietnam",
-    page_icon="🛵",
+    page_title="Social Listening Dashboard",
+    page_icon="📡",
     layout="wide",
 )
 
@@ -73,8 +74,8 @@ def load_daily_summary(days: int = 30) -> pd.DataFrame:
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 
-st.sidebar.title("🛵 Xe Máy Điện Social Listening")
-st.sidebar.markdown("**Vietnam E-Scooter Race**\nVinFast · Dat Bike · Selex · Yadea · Dibao · Honda")
+st.sidebar.title("� Social Listening")
+st.sidebar.markdown("Theo dõi & phân tích cảm xúc thương hiệu theo thời gian thực")
 
 days = st.sidebar.slider("Khoảng thời gian (ngày)", min_value=7, max_value=90, value=30, step=7)
 
@@ -129,7 +130,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Tổng quan", "😊 Cảm xúc", "📰 R
 
 # ────────────────────────────── Tab 1: Tổng quan ──────────────────────────────
 with tab1:
-    st.header("📊 Tổng quan — Share of Voice (Xe Máy Điện)")
+    st.header("📊 Tổng quan — Share of Voice")
 
     if not data_ok or df_posts.empty:
         st.info("Chưa có dữ liệu. Hãy chạy pipeline thu thập dữ liệu.")
