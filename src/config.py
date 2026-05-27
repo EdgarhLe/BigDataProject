@@ -38,12 +38,7 @@ MODEL_PATH = os.getenv("MODEL_PATH", "./models/sentiment_pipeline")
 # ── Crawl Settings ────────────────────────────────────────────
 RAW_KEYWORDS = os.getenv(
     "TRACK_KEYWORDS",
-    "VinFast,Evo200,Feliz S,Klara S,Vento S,Theon S,Rasad,Sadie,Saxil,"
-    "Dat Bike,Weaver,Dat Bike Quantum,"
-    "Selex,Selex Camel,"
-    "Yadea,Dibao,"
-    "Honda Icon e,CUV e,Honda UC3,"
-    "xe máy điện,scooter điện,electric scooter"
+    ""
 )
 TRACK_KEYWORDS = [k.strip() for k in RAW_KEYWORDS.split(",") if k.strip()]
 

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # ── OpenAI-based sentiment ─────────────────────────────────────────────────────
 
 _SYSTEM_PROMPT = """Bạn là một chuyên gia phân tích cảm xúc văn bản tiếng Việt và tiếng Anh.
-Phân tích cảm xúc của văn bản sau về một thương hiệu xe điện.
+Phân tích cảm xúc của văn bản sau.
 Trả về JSON theo định dạng:
 {
   "label": "positive"|"negative"|"neutral",

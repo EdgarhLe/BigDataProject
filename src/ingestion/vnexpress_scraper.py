@@ -19,13 +19,8 @@ from src.ingestion.kafka_producer import publish_doc
 
 logger = logging.getLogger(__name__)
 
-SEARCH_QUERIES = [
-    "VinFast xe máy điện",
-    "Dat Bike",
-    "Selex Yadea Dibao xe máy điện",
-    "Honda Icon e xe điện",
-    "xe máy điện 2025",
-]
+# Use dynamic tracking keywords; leave queries empty by default
+SEARCH_QUERIES = []
 
 SEARCH_URL   = "https://timkiem.vnexpress.net/"
 COMMENT_API  = "https://usi-saas.vnexpress.net/index/get"

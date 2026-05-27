@@ -1,9 +1,9 @@
 """Tuổi Trẻ Online scraper — bài viết từ RSS + trang tìm kiếm.
 
 Luồng hoạt động:
-  1. Đọc RSS feed chuyên mục Xe & Kinh doanh của Tuổi Trẻ
-  2. Lọc bài có liên quan đến xe điện / VinFast / BYD / Xiaomi Auto
-  3. Lưu article metadata vào MongoDB collection 'tuoitre_raw'
+    1. Đọc RSS feed chuyên mục Xe & Kinh doanh của Tuổi Trẻ
+    2. Lọc bài theo từ khóa đang cấu hình (không mặc định giới hạn một chủ đề)
+    3. Lưu article metadata vào MongoDB collection 'tuoitre_raw'
 
 Lưu ý: Tuổi Trẻ không có public comment API → chỉ thu thập bài viết + mô tả.
 """
@@ -28,13 +28,8 @@ RSS_FEEDS = [
     "https://tuoitre.vn/rss/tin-moi-nhat.rss",
 ]
 
-# Tìm kiếm bổ sung
-SEARCH_QUERIES = [
-    "VinFast xe máy điện",
-    "Dat Bike",
-    "Yadea Dibao xe máy điện",
-    "Honda xe điện Việt Nam",
-]
+# Tìm kiếm bổ sung (rỗng — sử dụng từ khóa động từ TRACK_KEYWORDS nếu cần)
+SEARCH_QUERIES = []
 
 SEARCH_URL  = "https://tuoitre.vn/tim-kiem.htm"
 MAX_RESULTS = 20
@@ -50,9 +45,8 @@ HEADERS = {
 
 # Từ khóa lọc bài liên quan
 def get_filter_keywords():
-    return [kw.lower() for kw in get_track_keywords()] + [
-        "xe điện", "electric", "ev", "vinfast", "byd", "xiaomi"
-    ]
+    # Rely solely on dynamic tracking keywords stored in config / DB
+    return [kw.lower() for kw in get_track_keywords()]
 
 
 def _is_relevant(text: str) -> bool:
